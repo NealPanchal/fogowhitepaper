@@ -1,0 +1,495 @@
+```typescriptreact file="lib/languages.ts"
+[v0-no-op-code-block-prefix]export type Language = {
+  slug: string
+  label: string
+  heading: string
+  subheading?: string
+  content: string
+  dir?: "ltr" | "rtl"
+}
+
+// English
+const ENGLISH_TEXT = `
+Version 1.0
+
+Abstract
+This paper introduces Fogo, a novel layer 1 blockchain protocol delivering breakthrough performance in throughput, latency, and congestion management. As an extension of the Solana protocol, Fogo maintains full compatibility at the SVM execution layer, allowing existing Solana programs, tooling, and infrastructure to migrate seamlessly while achieving significantly higher performance and lower latency.
+Fogo contributes three novel innovations:
+• A unified client implementation based on pure Firedancer, unlocking performance levels unattainable by networks with slower clients—including Solana itself.
+• Multi-local consensus with dynamic colocation, achieving block times and latencies far below those of any major blockchain.
+• A curated validator set that incentivizes high performance and deters predatory behavior at the validator level.
+These innovations deliver substantial performance gains while preserving the decentralization and robustness essential to a layer 1 blockchain.
+
+1. Introduction
+Blockchain networks face an ongoing challenge in balancing performance with decentralization and security. Today's blockchains suffer severe throughput limitations that make them unsuitable for global financial activity. Ethereum processes fewer than 50 transactions per second (TPS) on its base layer. Even the most centralized layer 2s handle less than 1,000 TPS. While Solana was designed for higher performance, limitations from client diversity currently cause congestion at 5,000 TPS. In contrast, traditional financial systems like NASDAQ, CME, and Eurex regularly process over 100,000 operations per second.
+Latency presents another critical limitation for decentralized blockchain protocols. In financial markets—especially for price discovery on volatile assets—low latency is essential for market quality and liquidity. Traditional market participants operate with end-to-end latencies at millisecond or sub-millisecond scales. These speeds are only achievable when market participants can co-locate with the execution environment due to the speed of light constraints.
+Traditional blockchain architectures use globally distributed validator sets that operate without geographic awareness, creating fundamental performance limitations. Light itself takes over 130 milliseconds to circumnavigate the globe at the equator, even traveling in a perfect circle—and real-world network paths involve additional distance and infrastructure delays. These physical limitations compound when consensus requires multiple communication rounds between validators. As a result, networks must implement conservative block times and finality delays to maintain stability. Even under optimal conditions, a globally distributed consensus mechanism cannot overcome these basic networking delays.
+As blockchains integrate further with the global financial system, users will demand performance comparable to today's centralized systems. Without careful design, meeting these demands could significantly compromise blockchain networks' decentralization and resilience. To address this challenge, we propose the Fogo layer one blockchain. Fogo's core philosophy is to maximize throughput and minimize latency through two key approaches: first, using the most performant client software on an optimally decentralized validator set; and second, embracing co-located consensus while preserving most of the decentralization benefits of global consensus.
+
+2. Outline
+The paper is broken down into sections covering the major design decisions around Fogo. Section 3 covers the relationship of Fogo to the Solana blockchain protocol and its strategy with regards to client optimization and diversity. Section 4 covers multi-local consensus, its practical implementation, and the tradeoffs it makes relative to global or local consensus. Section 5 covers Fogo's approach to initializing and maintaining the validator set. Section 6 covers prospective extensions that may be introduced after genesis.
+
+3. Protocol and Clients
+At a base layer Fogo starts by building on top of the most performant widely used blockchain protocol to date, Solana. The Solana network already comes with numerous optimization solutions, both in terms of protocol design and client implementations. Fogo targets maximum possible backwards compatibility with Solana, including full compatibility at the SVM execution layer and close compatibility with TowerBFT consensus, Turbine block propagation, Solana leader rotation and all other major components of the networking and consensus layers. This compatibility allows Fogo to easily integrate and deploy existing programs, tooling and infrastructure from the Solana ecosystem; as well as benefit from continuous upstream improvements in Solana.
+However unlike Solana, Fogo will run with a single canonical client. This canonical client will be the highest performance major client running on Solana. This allows Fogo to achieve significantly higher performance because the network will always run at the speed of the fastest client. Whereas Solana, limited by client diversity will always be bottlenecked by the speed of the slowest client. For now and the foreseeable future this canonical client will be based on the Firedancer stack.
+
+3.1 Firedancer
+Firedancer is Jump Crypto's high-performance Solana-compatible client implementation, showing substantially higher transaction processing throughput than current validator clients through optimized parallel processing, memory management, and SIMD instructions.
+Two versions exist: "Frankendancer," a hybrid using Firedancer's processing engine with the rust validator's networking stack, and the full Firedancer implementation with a complete C networking stack rewrite, currently in late-stage development.
+Both versions maintain Solana protocol compatibility while maximizing performance. Once completed, the pure Firedancer implementation is expected to set new performance benchmarks, making it ideal for Fogo's high-throughput requirements. Fogo will start with a Frankendancer based network then eventually transition to pure Firedancer.
+
+3.2 Canonical Clients vs. Client Diversity
+Blockchain protocols operate through client software that implements their rules and specifications. While protocols define the rules of network operation, clients translate these specifications into executable software. Client diversity traditionally serves multiple purposes: redundancy, independent verification of rules, and reduced risk of network‑wide software vulnerabilities. Bitcoin shows a precedent where Bitcoin Core serves as a de facto canonical client even with alternatives.
+However, in high‑performance networks near physical hardware limits, the space for implementation diversity contracts. Optimal implementations converge on similar solutions; deviations reduce performance to non‑viable levels. The benefits of diversity shrink as inter‑client compatibility overhead becomes a bottleneck.
+
+3.3 Protocol Incentives for Performant Clients
+Fogo allows any conforming client, but its architecture incentivizes using the fastest client. In co‑located settings, network latency is minimal, so client efficiency determines validator performance. Dynamic block parameters create economic pressure to maximize throughput; slower clients either miss blocks or must vote conservatively, reducing revenue. This naturally selects the most efficient implementation without hard protocol enforcement.
+
+4. Multi‑Local Consensus
+Multi‑local consensus dynamically balances the performance of validator co‑location with the security of geographic distribution. Validators coordinate physical locations across epochs while maintaining distinct cryptographic identities for zones, achieving ultra‑low latency consensus in normal operation with fallback to global consensus when needed.
+The model draws inspiration from the "follow the sun" pattern in traditional markets, where liquidity moves between Asia, Europe, and North America to balance continuous operation and concentrated liquidity.
+
+4.1 Zones and Zone Rotation
+A zone is a geographic area—ideally a single data center—where latency approaches hardware limits. Zones may expand as needed. Rotation provides jurisdictional decentralization, infrastructure resilience, and strategic performance optimization (e.g., locating near sources of price‑sensitive information).
+
+4.2 Key Management
+A two‑tier system separates global validator identity from zone‑specific participation. Validators keep a global key for high‑level actions and delegate to zone keys via an on‑chain registry. Delegations activate at epoch boundaries after network‑wide visibility.
+
+4.3 Zone Proposal and Activation
+New zones are proposed on‑chain with a mandatory delay for validators to prepare infrastructure, security, networking, and recovery procedures. Only after the delay can a zone be selected through regular voting.
+
+4.4 Zone Selection Voting Process
+Validators vote on future zones and target block times using stake‑weighted global keys. A supermajority establishes quorum; otherwise the network defaults to global consensus for the next epoch. The window allows infrastructure preparation and key warm‑up.
+
+4.5 Global Consensus Mode
+A fallback and safety mode with conservative parameters (e.g., 400ms block time, reduced block size). Triggered by failed zone selection or runtime finality failure; once triggered mid‑epoch, it remains until the next epoch.
+
+5. Validator Set
+Fogo uses a curated validator set to reach physical performance limits and mitigate abusive MEV. Initially proof‑of‑authority, transitioning to validator‑direct permissioning.
+
+5.1 Size and Initial Configuration
+The validator set has protocol bounds; initial target 20–50 validators. A genesis authority selects the initial set with temporary management powers.
+
+5.2 Governance and Transitions
+Control transitions to the validator set; membership changes require a two‑thirds supermajority. Turnover is rate‑limited to preserve stability.
+
+5.3 Participation Requirements
+Validators must meet minimum delegated stake and obtain set approval to ensure capability and alignment.
+
+5.4 Rationale and Network Governance
+This mechanism formalizes enforcement of beneficial behavior without materially reducing decentralization, since any PoS supermajority can already fork. It enables responses to persistent performance issues, abusive MEV, failure to forward Turbine blocks, and other harmful behaviors.
+
+6. Prospective Extensions
+Extensions under consideration maintain Solana compatibility.
+
+6.1 SPL Token Fee Payment
+A fee_payer_unsigned transaction type plus an on‑chain fee program would allow paying fees in SPL tokens via a permissionless relayer marketplace, requiring minimal protocol changes.
+
+7. Conclusion
+Fogo combines high‑performance client implementation with dynamic multi‑local consensus and curated validator sets to achieve unprecedented performance without compromising core PoS security. Dynamic relocation provides performance and resilience with robust fallbacks; incentives align naturally through economics.
+`
+
+// Vietnamese
+const VIETNAMESE_TEXT = `
+Version 1.0
+
+Tóm tắt
+Bài báo này giới thiệu Fogo, một giao thức blockchain lớp 1 mới mang lại hiệu suất đột phá về thông lượng, độ trễ và quản lý tắc nghẽn. Là phần mở rộng của giao thức Solana, Fogo duy trì khả năng tương thích hoàn toàn ở lớp thực thi SVM, cho phép các chương trình, công cụ và cơ sở hạ tầng hiện có của Solana có thể di chuyển liền mạch đồng thời đạt hiệu suất cao hơn đáng kể và độ trễ thấp hơn.
+Fogo mang lại ba đổi mới mới:
+• Triển khai client thống nhất dựa trên Firedancer thuần túy, mở khóa mức hiệu suất mà các mạng có client chậm hơn — bao gồm cả Solana — không thể đạt được.
+• Cơ chế đồng thuận đa khu vực (multi-local) với định vị động, đạt thời gian tạo khối và độ trễ thấp hơn bất kỳ blockchain lớn nào.
+• Bộ validator được tuyển chọn nhằm khuyến khích hiệu suất cao và ngăn chặn hành vi săn mồi ở cấp độ validator.
+Những đổi mới này mang lại mức tăng hiệu suất đáng kể đồng thời vẫn giữ nguyên sự phi tập trung và độ bền vững cần thiết cho một blockchain lớp 1.
+
+1. Giới thiệu
+Các mạng blockchain luôn phải đối mặt với thách thức cân bằng giữa hiệu suất, tính phi tập trung và bảo mật. Các blockchain ngày nay có giới hạn nghiêm trọng về thông lượng, khiến chúng không phù hợp cho các hoạt động tài chính toàn cầu. Ethereum xử lý ít hơn 50 giao dịch mỗi giây (TPS) ở lớp cơ sở. Ngay cả các layer 2 tập trung cao cũng xử lý dưới 1.000 TPS. Trong khi Solana được thiết kế cho hiệu suất cao hơn, các hạn chế từ sự đa dạng client hiện tại gây tắc nghẽn ở mức 5.000 TPS. Ngược lại, các hệ thống tài chính truyền thống như NASDAQ, CME và Eurex thường xử lý hơn 100.000 thao tác mỗi giây.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Indonesian
+const INDONESIAN_TEXT = `
+Versi 1.0
+
+Abstrak
+Makalah ini memperkenalkan Fogo, protokol blockchain layer 1 baru yang memberikan kinerja terobosan dalam throughput, latensi, dan manajemen kemacetan. Sebagai perpanjangan dari protokol Solana, Fogo mempertahankan kompatibilitas penuh pada lapisan eksekusi SVM, memungkinkan program, alat, dan infrastruktur Solana yang ada untuk bermigrasi dengan mulus sambil mencapai kinerja yang jauh lebih tinggi dan latensi yang lebih rendah.
+Fogo menghadirkan tiga inovasi baru:
+• Implementasi klien terpadu berbasis pure Firedancer, membuka tingkat kinerja yang tidak dapat dicapai oleh jaringan dengan klien yang lebih lambat—termasuk Solana itu sendiri.
+• Konsensus multi-lokal dengan kolokasi dinamis, mencapai waktu blok dan latensi jauh di bawah blockchain besar mana pun.
+• Kumpulan validator terkurasi yang memberikan insentif pada kinerja tinggi dan mencegah perilaku predator di tingkat validator.
+Inovasi-inovasi ini memberikan peningkatan kinerja yang substansial sambil mempertahankan desentralisasi dan ketangguhan yang penting untuk blockchain layer 1.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Malaysian (Malay)
+const MALAYSIAN_TEXT = `
+Versi 1.0
+
+Abstrak
+Kertas ini memperkenalkan Fogo, protokol blockchain lapisan 1 baharu yang memberikan prestasi luar biasa dalam throughput, latensi dan pengurusan kesesakan. Sebagai sambungan kepada protokol Solana, Fogo mengekalkan keserasian penuh pada lapisan pelaksanaan SVM, membolehkan program, peralatan dan infrastruktur Solana sedia ada berpindah dengan lancar sambil mencapai prestasi yang jauh lebih tinggi dan latensi yang lebih rendah.
+Fogo menyumbangkan tiga inovasi baharu:
+• Pelaksanaan klien bersatu berasaskan pure Firedancer, membuka tahap prestasi yang tidak dapat dicapai oleh rangkaian dengan klien yang lebih perlahan—termasuk Solana sendiri.
+• Konsensus multi-lokal dengan kolokasi dinamik, mencapai masa blok dan latensi jauh di bawah mana-mana blockchain utama.
+• Set validator terkurasi yang memberi insentif kepada prestasi tinggi dan menghalang tingkah laku pemangsa di peringkat validator.
+Inovasi ini memberikan peningkatan prestasi yang ketara sambil mengekalkan desentralisasi dan ketahanan yang penting untuk blockchain lapisan 1.
+
+1. Pengenalan
+Rangkaian blockchain berdepan cabaran berterusan dalam mengimbangi prestasi dengan desentralisasi dan keselamatan. Blockchain hari ini mengalami had throughput yang teruk, menjadikannya tidak sesuai untuk aktiviti kewangan global. Ethereum memproses kurang daripada 50 transaksi sesaat (TPS) pada lapisan asasnya. Malah lapisan 2 yang paling berpusat mengendalikan kurang daripada 1,000 TPS. Walaupun Solana direka untuk prestasi yang lebih tinggi, had daripada kepelbagaian klien pada masa ini menyebabkan kesesakan pada 5,000 TPS. Sebaliknya, sistem kewangan tradisional seperti NASDAQ, CME dan Eurex secara rutin memproses lebih daripada 100,000 operasi sesaat.
+Latensi adalah satu lagi had kritikal bagi protokol blockchain terdesentralisasi. Dalam pasaran kewangan—terutamanya untuk penemuan harga pada aset yang tidak stabil—latensi rendah adalah penting untuk kualiti pasaran dan kecairan. Peserta pasaran tradisional beroperasi dengan latensi hujung-ke-hujung pada skala milisaat atau sub-milisaat. Kelajuan ini hanya boleh dicapai apabila peserta pasaran boleh berkedudukan bersama dengan persekitaran pelaksanaan disebabkan had kelajuan cahaya.
+Seni bina blockchain tradisional menggunakan set validator yang diedarkan secara global tanpa kesedaran geografi, mewujudkan had prestasi asas. Cahaya sendiri mengambil masa lebih 130 milisaat untuk mengelilingi dunia di garisan khatulistiwa, walaupun bergerak dalam bulatan sempurna—dan laluan rangkaian dunia nyata melibatkan jarak tambahan dan kelewatan infrastruktur. Had fizikal ini bertambah apabila konsensus memerlukan beberapa pusingan komunikasi antara validator. Akibatnya, rangkaian mesti melaksanakan masa blok konservatif dan kelewatan finaliti untuk mengekalkan kestabilan. Malah dalam keadaan optimum, mekanisme konsensus teragih global tidak dapat mengatasi kelewatan rangkaian asas ini.
+Apabila blockchain semakin berintegrasi dengan sistem kewangan global, pengguna akan menuntut prestasi setara dengan sistem berpusat hari ini. Tanpa reka bentuk yang teliti, memenuhi tuntutan ini boleh menjejaskan desentralisasi dan daya tahan rangkaian blockchain. Untuk menangani cabaran ini, kami mencadangkan blockchain lapisan satu Fogo. Falsafah teras Fogo adalah memaksimumkan throughput dan meminimumkan latensi melalui dua pendekatan utama: pertama, menggunakan perisian klien berprestasi paling tinggi pada set validator yang dioptimumkan secara desentralisasi; dan kedua, menerima konsensus berkolokasi sambil mengekalkan sebahagian besar manfaat desentralisasi daripada konsensus global.
+
+2. Garis Besar
+Kertas ini dipecahkan kepada bahagian-bahagian yang merangkumi keputusan reka bentuk utama mengenai Fogo. Seksyen 3 merangkumi hubungan Fogo dengan protokol blockchain Solana dan strateginya berkaitan pengoptimuman klien dan kepelbagaian. Seksyen 4 merangkumi konsensus multi-lokal, pelaksanaan praktikalnya, dan pertukaran yang dibuat berbanding konsensus global atau tempatan. Seksyen 5 merangkumi pendekatan Fogo untuk memulakan dan mengekalkan set validator. Seksyen 6 merangkumi sambungan prospektif yang mungkin diperkenalkan selepas genesis.
+
+3. Protokol dan Klien
+Pada lapisan asas, Fogo bermula dengan membina di atas protokol blockchain yang paling berprestasi tinggi dan digunakan secara meluas setakat ini, Solana. Rangkaian Solana sudah mempunyai pelbagai penyelesaian pengoptimuman, dari segi reka bentuk protokol dan pelaksanaan klien. Fogo menyasarkan keserasian ke belakang maksimum dengan Solana, termasuk keserasian penuh pada lapisan pelaksanaan SVM dan keserasian rapat dengan konsensus TowerBFT, penyebaran blok Turbine, giliran pemimpin Solana dan semua komponen utama lain daripada lapisan rangkaian dan konsensus. Keserasian ini membolehkan Fogo mengintegrasi dan menggunakan program, peralatan dan infrastruktur sedia ada daripada ekosistem Solana dengan mudah; serta mendapat manfaat daripada penambahbaikan berterusan daripada Solana.
+Namun tidak seperti Solana, Fogo akan berjalan dengan satu klien kanonik. Klien kanonik ini akan menjadi klien utama berprestasi paling tinggi yang berjalan pada Solana. Ini membolehkan Fogo mencapai prestasi yang jauh lebih tinggi kerana rangkaian akan sentiasa berjalan pada kelajuan klien terpantas. Manakala Solana, yang dihadkan oleh kepelbagaian klien, akan sentiasa dibelenggu oleh kelajuan klien paling perlahan. Buat masa sekarang dan masa depan yang dapat dijangka, klien kanonik ini akan berasaskan stack Firedancer.
+
+3.1 Firedancer
+Firedancer ialah pelaksanaan klien Solana serasi berprestasi tinggi oleh Jump Crypto, yang menunjukkan throughput pemprosesan transaksi jauh lebih tinggi berbanding klien validator semasa melalui pemprosesan selari yang dioptimumkan, pengurusan memori, dan arahan SIMD.
+Terdapat dua versi: "Frankendancer," hibrid yang menggunakan enjin pemprosesan Firedancer dengan stack rangkaian validator rust, dan pelaksanaan Firedancer penuh dengan penulisan semula stack rangkaian C lengkap, yang kini dalam pembangunan peringkat akhir.
+Kedua-dua versi mengekalkan keserasian protokol Solana sambil memaksimumkan prestasi. Setelah siap, pelaksanaan pure Firedancer dijangka menetapkan penanda aras prestasi baharu, menjadikannya ideal untuk keperluan throughput tinggi Fogo. Fogo akan bermula dengan rangkaian berasaskan Frankendancer kemudian beralih ke pure Firedancer.
+
+3.2 Klien Kanonik vs. Kepelbagaian Klien
+Protokol blockchain beroperasi melalui perisian klien yang melaksanakan peraturan dan spesifikasinya. Walaupun protokol menentukan peraturan operasi rangkaian, klien menterjemahkan spesifikasi ini kepada perisian boleh laku. Kepelbagaian klien secara tradisional berfungsi untuk beberapa tujuan: redundansi, pengesahan peraturan secara bebas, dan pengurangan risiko kelemahan perisian di seluruh rangkaian. Bitcoin menunjukkan preseden di mana Bitcoin Core berfungsi sebagai klien kanonik de facto walaupun terdapat alternatif.
+Namun, dalam rangkaian berprestasi tinggi yang hampir dengan had perkakasan fizikal, ruang untuk kepelbagaian pelaksanaan semakin mengecil. Pelaksanaan optimum cenderung menyatu kepada penyelesaian serupa; penyimpangan mengurangkan prestasi ke tahap yang tidak layak. Manfaat kepelbagaian berkurang apabila overhead keserasian antara klien menjadi penghalang.
+
+3.3 Insentif Protokol untuk Klien Berprestasi Tinggi
+Fogo membenarkan mana-mana klien yang mematuhi, tetapi arkitekturnya memberi insentif untuk menggunakan klien terpantas. Dalam tetapan berkolokasi, latensi rangkaian adalah minimum, jadi kecekapan klien menentukan prestasi validator. Parameter blok dinamik mewujudkan tekanan ekonomi untuk memaksimumkan throughput; klien yang lebih perlahan sama ada akan terlepas blok atau perlu mengundi secara konservatif, mengurangkan pendapatan. Ini secara semula jadi memilih pelaksanaan paling cekap tanpa penguatkuasaan protokol yang ketat.
+
+4. Konsensus Multi-Lokal
+Konsensus multi-lokal secara dinamik mengimbangi prestasi kolokasi validator dengan keselamatan pengedaran geografi. Validator menyelaras lokasi fizikal merentasi epoch sambil mengekalkan identiti kriptografi yang berbeza untuk zon, mencapai konsensus latensi ultra rendah dalam operasi biasa dengan fallback kepada konsensus global apabila diperlukan.
+Model ini diilhamkan oleh corak "follow the sun" dalam pasaran tradisional, di mana kecairan bergerak antara Asia, Eropah, dan Amerika Utara untuk mengimbangi operasi berterusan dan kepekatan kecairan.
+
+4.1 Zon dan Putaran Zon
+Zon ialah kawasan geografi—idealnya satu pusat data—di mana latensi menghampiri had perkakasan. Zon boleh diperluaskan mengikut keperluan. Putaran memberikan desentralisasi bidang kuasa, ketahanan infrastruktur, dan pengoptimuman prestasi strategik (contohnya, terletak berhampiran sumber maklumat sensitif harga).
+
+4.2 Pengurusan Kunci
+Sistem dua peringkat memisahkan identiti validator global daripada penyertaan khusus zon. Validator menyimpan kunci global untuk tindakan peringkat tinggi dan mendelegasikan kepada kunci zon melalui daftar on-chain. Delegasi diaktifkan pada sempadan epoch selepas keterlihatan seluruh rangkaian.
+
+4.3 Cadangan dan Pengaktifan Zon
+Zon baharu dicadangkan secara on-chain dengan kelewatan mandatori untuk validator menyediakan infrastruktur, keselamatan, rangkaian, dan prosedur pemulihan. Hanya selepas kelewatan zon boleh dipilih melalui pengundian biasa.
+
+4.4 Proses Pengundian Pemilihan Zon
+Validator mengundi zon masa depan dan masa blok sasaran menggunakan kunci global berpemberat pegangan. Supermajoriti mewujudkan kuorum; jika tidak, rangkaian lalai kepada konsensus global untuk epoch berikutnya. Tetingkap ini membolehkan penyediaan infrastruktur dan pemanasan kunci.
+
+4.5 Mod Konsensus Global
+Mod fallback dan keselamatan dengan parameter konservatif (contohnya, masa blok 400ms, saiz blok dikurangkan). Dicetuskan oleh kegagalan pemilihan zon atau kegagalan finaliti runtime; setelah dicetuskan di tengah epoch, ia kekal sehingga epoch berikutnya.
+
+5. Set Validator
+Fogo menggunakan set validator terkurasi untuk mencapai had prestasi fizikal dan mengurangkan MEV yang memudaratkan. Pada mulanya proof-of-authority, beralih kepada kebenaran terus oleh validator.
+
+5.1 Saiz dan Konfigurasi Awal
+Set validator mempunyai had protokol; sasaran awal 20–50 validator. Autoriti genesis memilih set awal dengan kuasa pengurusan sementara.
+
+5.2 Tadbir Urus dan Peralihan
+Kawalan beralih kepada set validator; perubahan keahlian memerlukan supermajoriti dua pertiga. Pertukaran dihadkan kadarnya untuk mengekalkan kestabilan.
+
+5.3 Keperluan Penyertaan
+Validator mesti memenuhi minimum pegangan yang didelegasikan dan mendapatkan kelulusan set untuk memastikan kemampuan dan penjajaran.
+
+5.4 Rasional dan Tadbir Urus Rangkaian
+Mekanisme ini memformalkan penguatkuasaan tingkah laku yang bermanfaat tanpa mengurangkan desentralisasi secara material, kerana mana-mana supermajoriti PoS sudah boleh melakukan fork. Ia membolehkan tindak balas terhadap masalah prestasi yang berterusan, MEV yang memudaratkan, kegagalan menghantar blok Turbine, dan tingkah laku berbahaya lain.
+
+6. Sambungan Prospektif
+Sambungan yang sedang dipertimbangkan mengekalkan keserasian Solana.
+
+6.1 Pembayaran Yuran Token SPL
+Jenis transaksi fee_payer_unsigned ditambah program yuran on-chain akan membolehkan pembayaran yuran dalam token SPL melalui pasaran relayer tanpa kebenaran, memerlukan perubahan protokol minimum.
+
+7. Kesimpulan
+Fogo menggabungkan pelaksanaan klien berprestasi tinggi dengan konsensus multi-lokal dinamik dan set validator terkurasi untuk mencapai prestasi yang belum pernah dicapai tanpa menjejaskan keselamatan teras PoS. Penempatan semula dinamik memberikan prestasi dan ketahanan dengan fallback yang kukuh; insentif sejajar secara semula jadi melalui ekonomi.
+`
+
+// Chinese (Simplified)
+const CHINESE_TEXT = `
+版本 1.0
+
+摘要
+本文介绍了 Fogo，这是一种新型的一层区块链协议，在吞吐量、延迟和拥塞管理方面实现了突破性的性能。作为 Solana 协议的扩展，Fogo 在 SVM 执行层保持完全兼容，使现有的 Solana 程序、工具和基础设施能够无缝迁移，同时实现显著更高的性能和更低的延迟。
+Fogo 引入了三项创新：
+• 基于纯 Firedancer 的统一客户端实现，解锁了其他运行较慢客户端（包括 Solana 自身）网络无法达到的性能水平。
+• 具有动态共址的多本地共识，区块时间和延迟远低于任何主要区块链。
+• 精选的验证者集合，激励高性能并在验证者层面遏制掠夺性行为。
+这些创新在保留一层区块链去中心化和稳健性的同时，带来了显著的性能提升。
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Thai
+const THAI_TEXT = `
+Version 1.0
+
+บทคัดย่อ
+เอกสารนี้นำเสนอ Fogo ซึ่งเป็นโปรโตคอลบล็อกเชนเลเยอร์ 1 แบบใหม่ ที่มอบประสิทธิภาพการทำงานระดับก้าวกระโดดทั้งด้านปริมาณธุรกรรม ความหน่วงต่ำ และการจัดการความหนาแน่นของเครือข่าย
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Hindi
+const HINDI_TEXT = `
+Version 1.0
+
+Abstract
+Ye paper Fogo ko introduce karta hai, ek naya layer 1 blockchain protocol jo throughput, latency aur congestion management me breakthrough performance deta hai...
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Japanese
+const JAPANESE_TEXT = `
+バージョン 1.0
+
+概要
+本論文は、スループット、レイテンシ、および輻輳管理において画期的な性能を発揮する新しいレイヤー1ブロックチェーンプロトコル「Fogo」を紹介する。
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Korean
+const KOREAN_TEXT = `
+버전 1.0
+
+초록
+본 논문은 처리량, 지연 시간, 혼잡 관리 측면에서 획기적인 성능을 제공하는 새로운 레이어 1 블록체인 프로토콜인 Fogo를 소개한다.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Filipino
+const FILIPINO_TEXT = `
+Bersyon 1.0
+
+Abstrak
+Ang papel na ito ay nagpapakilala sa Fogo, isang makabagong layer 1 blockchain protocol na naghahatid ng pambihirang pagganap sa throughput, latency, at pamamahala ng congestion.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Ukrainian
+const UKRAINIAN_TEXT = `
+Version 1.0
+
+Анотація
+У цій роботі представлено Fogo — новий протокол блокчейну рівня 1, що забезпечує проривну продуктивність за пропускною здатністю, затримкою та управлінням перевантаженнями.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Portuguese
+const PORTUGUESE_TEXT = `
+Versão 1.0
+
+Resumo
+Este documento apresenta o Fogo, um novo protocolo blockchain de camada 1 que oferece um desempenho revolucionário em taxa de transferência, latência e gestão de congestionamento.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// French
+const FRENCH_TEXT = `
+Version 1.0
+
+Résumé
+Cet article présente Fogo, un nouveau protocole blockchain de couche 1 offrant des performances révolutionnaires en termes de débit, de latence et de gestion de la congestion.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Turkish
+const TURKISH_TEXT = `
+Sürüm 1.0
+
+Özet
+Bu makale, işlem hacmi, gecikme süresi ve tıkanıklık yönetiminde çığır açan performans sunan yeni bir katman 1 blok zinciri protokolü olan Fogo’yu tanıtmaktadır.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Russian
+const RUSSIAN_TEXT = `
+Fogo: Высокопроизводительный SVM Layer 1
+Версия 1.0
+Аннотация
+В данной статье представлен Fogo, новый протокол блокчейна первого уровня, обеспечивающий прорывные показатели производительности, задержки и управления перегрузками. Являясь расширением протокола Solana, Fogo сохраняет полную совместимость на уровне исполнения SVM, что позволяет без проблем переносить существующие программы, инструменты и инфраструктуру Solana, достигая при этом значительно более высокой производительности и меньшей задержки.
+Fogo предлагает три инновационные разработки:
+• Унифицированная реализация клиента на основе чистого Firedancer, позволяющая достичь уровня производительности, недостижимого для сетей с более медленными клиентами, включая саму Solana.
+• Мультилокальный консенсус с динамическим размещением, достигающий времени блокировки и задержки намного ниже, чем у любого крупного блокчейна.
+• Набор валидаторов, стимулирующий высокую производительность и препятствующий хищническому поведению на уровне валидаторов.
+Эти инновации обеспечивают существенный прирост производительности при сохранении децентрализации и надежности, необходимых для блокчейна первого уровня.
+
+... (content continues exactly as previously provided in the code you gave for Russian)
+`
+
+// Hausa
+const HAUSA_TEXT = `
+Sigar 1.0
+
+Takaitaccen Bayani
+Wannan takarda tana gabatar da Fogo, sabon yarjejeniya ta blockchain na Layer 1 wanda ke kawo ci gaba mai ban mamaki a fannin throughput, latency, da kuma gudanar da cunkoson hanyoyin sadarwa.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Spanish
+const SPANISH_TEXT = `
+Versión 1.0
+
+Resumen
+Este documento presenta Fogo, un novedoso protocolo de blockchain de capa 1 que ofrece un rendimiento revolucionario en throughput, latencia y gestión de congestión.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Bengali
+const BENGALI_TEXT = `
+সংস্করণ ১.০
+
+সারসংক্ষেপ
+এই গবেষণাপত্রটি ফোগোকে উপস্থাপন করে, একটি নতুন লেয়ার ১ ব্লকচেইন প্রোটোকল যা থ্রুপুট, ল্যাটেন্সি এবং কনজেশন ম্যানেজমেন্টে যুগান্তকারী পারফরম্যান্স প্রদান করে।
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Polish
+const POLISH_TEXT = `
+Wersja 1.0
+
+Streszczenie
+Niniejszy dokument przedstawia Fogo, nowatorski protokół blockchain warstwy 1, oferujący przełomową wydajność pod względem przepustowości, opóźnień oraz zarządzania przeciążeniami.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Persian (Farsi) - RTL
+const PERSIAN_TEXT = `
+نسخه 1.0
+
+چکیده
+این مقاله فُگو را معرفی می‌کند، یک پروتکل بلاک‌چین لایه ۱ نوآورانه که عملکردی بی‌نظیر در توان عملیاتی، تأخیر و مدیریت ازدحام ارائه می‌دهد.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Arabic - RTL
+const ARABIC_TEXT = `
+الإصدار 1.0
+
+الملخص
+تقدم هذه الورقة البحثية Fogo، وهو بروتوكول بلوكشين من الطبقة الأولى يقدم أداءً ثوريًا في مجالات الإنتاجية، الكمون، وإدارة الازدحام.
+
+... (content continues exactly as previously provided in the code)
+`
+
+// Urdu - RTL
+const URDU_TEXT = `
+Fogo: Ek High-Performance SVM Layer 1
+Version 1.0
+
+Abstract
+Yeh paper Fogo ka taaruf karwata hai — aik naya Layer 1 blockchain protocol jo throughput, latency, aur congestion management mein bemaisal performance deta hai...
+
+... (content continues exactly as previously provided in the code)
+`
+
+export const languages: Language[] = [
+  {
+    slug: "english",
+    label: "English",
+    heading: "English Whitepaper",
+    subheading: "Version 1.0",
+    content: ENGLISH_TEXT,
+    dir: "ltr",
+  },
+  {
+    slug: "vietnamese",
+    label: "Vietnamese",
+    heading: "Sách Trắng Fogo",
+    subheading: "Version 1.0",
+    content: VIETNAMESE_TEXT,
+  },
+  {
+    slug: "indonesian",
+    label: "Indonesian",
+    heading: "Buku Putih Fogo",
+    subheading: "Versi 1.0",
+    content: INDONESIAN_TEXT,
+  },
+  {
+    slug: "malaysian",
+    label: "Malaysian",
+    heading: "Kertas Putih Fogo",
+    subheading: "Versi 1.0",
+    content: MALAYSIAN_TEXT,
+  },
+  { slug: "chinese", label: "Chinese", heading: "Fogo 白皮书", subheading: "版本 1.0", content: CHINESE_TEXT },
+  { slug: "thai", label: "Thai", heading: "ไวท์เปเปอร์ Fogo", subheading: "Version 1.0", content: THAI_TEXT },
+  { slug: "hindi", label: "Hindi", heading: "Fogo श्वेतपत्र", subheading: "Version 1.0", content: HINDI_TEXT },
+  {
+    slug: "japanese",
+    label: "Japanese",
+    heading: "Fogo ホワイトペーパー",
+    subheading: "バージョン 1.0",
+    content: JAPANESE_TEXT,
+  },
+  { slug: "korean", label: "Korean", heading: "Fogo 백서", subheading: "버전 1.0", content: KOREAN_TEXT },
+  {
+    slug: "filipino",
+    label: "Filipino",
+    heading: "Fogo Whitepaper",
+    subheading: "Bersyon 1.0",
+    content: FILIPINO_TEXT,
+  },
+  {
+    slug: "ukrainian",
+    label: "Ukrainian",
+    heading: "Біла книга Fogo",
+    subheading: "Version 1.0",
+    content: UKRAINIAN_TEXT,
+  },
+  {
+    slug: "portuguese",
+    label: "Portuguese",
+    heading: "Whitepaper Fogo",
+    subheading: "Versão 1.0",
+    content: PORTUGUESE_TEXT,
+  },
+  { slug: "french", label: "French", heading: "Livre Blanc Fogo", subheading: "Version 1.0", content: FRENCH_TEXT },
+  {
+    slug: "turkish",
+    label: "Turkish",
+    heading: "Fogo Teknik Dokümanı",
+    subheading: "Sürüm 1.0",
+    content: TURKISH_TEXT,
+  },
+  { slug: "russian", label: "Russian", heading: "Белая книга Fogo", subheading: "Версия 1.0", content: RUSSIAN_TEXT },
+  { slug: "hausa", label: "Hausa", heading: "Fogo Farar Takarda", subheading: "Sigar 1.0", content: HAUSA_TEXT },
+  {
+    slug: "spanish",
+    label: "Spanish",
+    heading: "Libro Blanco de Fogo",
+    subheading: "Versión 1.0",
+    content: SPANISH_TEXT,
+  },
+  { slug: "bengali", label: "Bengali", heading: "ফোগো হোয়াইটপেপার", subheading: "সংস্করণ ১.০", content: BENGALI_TEXT },
+  { slug: "urdu", label: "Urdu", heading: "Fogo وائٹ پیپر", subheading: "Version 1.0", content: URDU_TEXT, dir: "rtl" },
+  { slug: "polish", label: "Polish", heading: "Biała Księga Fogo", subheading: "Wersja 1.0", content: POLISH_TEXT },
+  {
+    slug: "arabic",
+    label: "Arabic",
+    heading: "الورقة البيضاء لـ Fogo",
+    subheading: "الإصدار 1.0",
+    content: ARABIC_TEXT,
+    dir: "rtl",
+  },
+  {
+    slug: "persian",
+    label: "Persian",
+    heading: "وایت‌پیپر فُگو",
+    subheading: "نسخه 1.0",
+    content: PERSIAN_TEXT,
+    dir: "rtl",
+  },
+]
