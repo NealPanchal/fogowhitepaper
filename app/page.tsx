@@ -98,17 +98,26 @@ export default function Page() {
         </article>
 
         <p className="mt-6 text-xs text-[#7f93a8]">
-          Designed & Developed by{" "}
-          <a
-            href="https://x.com/Oreganoflakess"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-[#a1b8d1]"
-          >
-            0regan0flakes
-          </a>
-          .
-        </p>
+  Designed & Developed by{" "}
+  <a
+    href="https://x.com/Oreganoflakess"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="underline hover:text-[#a1b8d1]"
+  >
+    0regan0flakes
+  </a>{" "}
+  &{" "}
+  <a
+    href="https://x.com/LUCKY_JADEJA08"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="underline hover:text-[#a1b8d1]"
+  >
+    Lucky
+  </a>
+</p>
+
       </section>
     </main>
   )
