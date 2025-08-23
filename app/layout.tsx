@@ -6,12 +6,11 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Fogo Chain Whitepaper",
+  title: "FogoChain Whitepaper",
   description: "A high-performance SVM Layer 1 blockchain protocol",
   icons: {
     icon: "/favicon.png",
   },
-    generator: 'v0.app'
 }
 
 export default function RootLayout({
